@@ -99,7 +99,8 @@ function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRender
       material: (intersects[0].object as any).material.clone() 
     };
     intersection.object.children.forEach(child => {
-      (child as any).material.color.set(0x00ff00);
+      (child as any).material.emissive.setHex(0xffffff);
+      (child as any).material.emissiveIntensity = 0.3;
     });
   }
 }
