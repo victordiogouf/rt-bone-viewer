@@ -30,7 +30,7 @@ jobs:
       - name: Build
         run: |
           npm install
-          npx vite build
+          npx vite build --base=/rt-bone-viewer/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
