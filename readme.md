@@ -1,0 +1,1 @@
+Skeleton data from "BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International"

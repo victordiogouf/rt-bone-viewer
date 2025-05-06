@@ -42,4 +42,11 @@ export class OrbitalCamera extends PerspectiveCamera {
     this.position.copy(new Vector3(x, y, z).add(this.target));
     super.lookAt(this.target);
   }
+
+  get vectors() {
+    const forward = this.getWorldDirection(new Vector3()).normalize();
+    const right = new Vector3().crossVectors(forward, this.up).normalize();
+    const up = new Vector3().crossVectors(right, forward);
+    return { forward, right, up };
+  }
 }

@@ -4,7 +4,11 @@ import KeyboardState from '../lib/keyboard-state';
 
 import { OrbitalCamera } from './orbital-camera';
 import { import_gltf } from './importer';
+
 import skeleton_url from '../assets/skeleton.glb?url';
+import { PinchHandler } from './pinch-handler';
+
+let g_pinching = false;
 
 main();
 
@@ -38,7 +42,28 @@ async function main() {
   const keyboard = new KeyboardState();
   
   wglRenderer.domElement.addEventListener('pointermove', e => process_pointer_move(e, scene, wglRenderer, camera));
+  wglRenderer.domElement.addEventListener('pointerup', e => process_pointer_up(e));
   wglRenderer.domElement.addEventListener('mousewheel', e => process_mouse_wheel(e as WheelEvent, camera));
+  wglRenderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+  
+  const pinch_handler = new PinchHandler(wglRenderer.domElement);
+  pinch_handler.add_listener("pinchstart", () => g_pinching = true);
+  pinch_handler.add_listener("pinchend", () => g_pinching = false);
+  pinch_handler.add_listener("pinching", e => {
+    const { up, right } = camera.vectors;
+    const offset = up.clone().multiplyScalar(e.movement.y * camera.distance * 0.002)
+      .add(right.clone().multiplyScalar(-e.movement.x * camera.distance * 0.002));
+    camera.target.add(offset);
+
+    camera.distance /= e.scale;
+    if (camera.distance < 0.1) {
+      camera.distance = 0.1;
+    }
+    if (camera.distance > 100) {
+      camera.distance = 100;
+    }
+    camera.update_position();
+  });
 
   addEventListener('resize', () => {
     wglRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -56,17 +81,20 @@ async function main() {
     requestAnimationFrame(render);
   }
 
+  dispatchEvent(new CustomEvent('loaded', {}));
   render();
 }
 
-let intersection: { object: Object3D, material: Material } | null = null;
+let g_intersection: { object: Object3D, material: Material } | null = null;
 
 function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRenderer: WebGLRenderer, camera: OrbitalCamera) {
-  if (intersection) {
-    intersection.object.children.forEach(child => {
-      (child as any).material.copy(intersection!.material);
+  if (g_pinching) return;
+
+  if (g_intersection) {
+    g_intersection.object.children.forEach(child => {
+      (child as any).material.copy(g_intersection!.material);
     });
-    intersection = null;
+    g_intersection = null;
   }
   
   if (event.buttons === 1) {
@@ -82,6 +110,14 @@ function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRender
     camera.update_position();
     return;
   }
+  else if (event.buttons === 2) {
+    wglRenderer.domElement.style.cursor = 'grabbing';
+    const { up, right } = camera.vectors;
+    const offset = up.clone().multiplyScalar(event.movementY * 0.001).add(right.clone().multiplyScalar(-event.movementX * 0.001));
+    camera.target.add(offset);
+    camera.update_position();
+    return;
+  }
   else {
     wglRenderer.domElement.style.cursor = 'grab';
   }
@@ -94,14 +130,20 @@ function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRender
   const intersects = raycaster.intersectObject(skeleton, true);
   if (intersects.length > 0) {
     wglRenderer.domElement.style.cursor = 'pointer';
-    intersection = { 
+    g_intersection = { 
       object: intersects[0].object.parent!, 
       material: (intersects[0].object as any).material.clone() 
     };
-    intersection.object.children.forEach(child => {
+    g_intersection.object.children.forEach(child => {
       (child as any).material.emissive.setHex(0xffffff);
       (child as any).material.emissiveIntensity = 0.3;
     });
+  }
+}
+
+function process_pointer_up(event: PointerEvent) {
+  if (event.buttons === 1) {
+    
   }
 }
 

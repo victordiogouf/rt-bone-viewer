@@ -9,5 +9,37 @@
   </head>
   <body>
     <script type="module" src="/src/main.ts"></script>
+    <button type="button" id="show-info">
+      <img src="/question.svg" alt="info" />
+    </button>
+    <div id="info" class="hidden">
+      <h2>Bone Viewer</h2>
+      <p>Click on the bones to see their names.</p>
+      <p>Click on the question mark to hide this message.</p>
+      <div id="divider"></div>
+      <h3>Controls</h3>
+      <p>Press and drag to rotate the model.</p>
+      <p>Scroll or pinch to zoom in and out.</p>
+      <p>Press mouse right and drag to pan the model.</p>
+      <div id="divider"></div>
+      <p>Skeleton data from "BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International"</p>
+    </div>
+    <div id="loader">
+      <div id="spinner"></div>
+      <p>Loading...</p>
+    </div>
+    <script>
+      const infoButton = document.getElementById('show-info');
+      const info = document.getElementById('info');
+
+      infoButton.addEventListener('click', () => {
+        info.classList.toggle('hidden');
+      });
+
+      addEventListener('loaded', () => {
+        const loader = document.getElementById('loader');
+        loader.classList.add('hidden');
+      });
+    </script>
   </body>
 </html>
