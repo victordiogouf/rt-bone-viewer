@@ -4,9 +4,9 @@ import KeyboardState from '../lib/keyboard-state';
 
 import { OrbitalCamera } from './orbital-camera';
 import { import_gltf } from './importer';
+import { PinchEvent, PinchHandler } from './pinch-handler';
 
 import skeleton_url from '../assets/skeleton.glb?url';
-import { PinchHandler } from './pinch-handler';
 
 let g_pinching = false;
 
@@ -49,21 +49,7 @@ async function main() {
   const pinch_handler = new PinchHandler(wglRenderer.domElement);
   pinch_handler.add_listener("pinchstart", () => g_pinching = true);
   pinch_handler.add_listener("pinchend", () => g_pinching = false);
-  pinch_handler.add_listener("pinching", e => {
-    const { up, right } = camera.vectors;
-    const offset = up.clone().multiplyScalar(e.movement.y * camera.distance * 0.002)
-      .add(right.clone().multiplyScalar(-e.movement.x * camera.distance * 0.002));
-    camera.target.add(offset);
-
-    camera.distance /= e.scale;
-    if (camera.distance < 0.1) {
-      camera.distance = 0.1;
-    }
-    if (camera.distance > 100) {
-      camera.distance = 100;
-    }
-    camera.update_position();
-  });
+  pinch_handler.add_listener("pinching", e => handle_pinch(e, camera));
 
   addEventListener('resize', () => {
     wglRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -86,11 +72,13 @@ async function main() {
 }
 
 let g_intersection: { object: Object3D, material: Material } | null = null;
+let g_selected: { object: Object3D, material: Material } | null = null;
 
 function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRenderer: WebGLRenderer, camera: OrbitalCamera) {
   if (g_pinching) return;
 
-  if (g_intersection) {
+  // remove highlight
+  if (g_intersection && g_intersection.object.uuid !== g_selected?.object.uuid) {
     g_intersection.object.children.forEach(child => {
       (child as any).material.copy(g_intersection!.material);
     });
@@ -142,9 +130,24 @@ function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRender
 }
 
 function process_pointer_up(event: PointerEvent) {
-  if (event.buttons === 1) {
-    
+  if (event.buttons !== 1) return;
+  if (g_selected?.object.uuid === g_intersection?.object.uuid) {
+    return;
   }
+  
+  // deselect current object
+  if (g_selected) {
+    g_selected.object.children.forEach(child => {
+      (child as any).material.copy(g_selected!.material);
+    });
+    g_selected = null;
+    dispatchEvent(new CustomEvent('deselected', {}));
+  }
+
+  if (!g_intersection) return;
+
+  g_selected = g_intersection;
+  dispatchEvent(new CustomEvent('selected', { detail: g_selected.object }));
 }
 
 function process_mouse_wheel(event: WheelEvent, camera: OrbitalCamera) {
@@ -168,12 +171,14 @@ function process_keyboard(keyboard: KeyboardState, camera: OrbitalCamera, frame_
     if (camera.fov < 1) {
       camera.fov = 1;
     }
+    camera.updateProjectionMatrix();
   }
   if (keyboard.pressed('S')) {
     camera.fov += 0.1 * frame_time;
     if (camera.fov > 179) {
       camera.fov = 179;
     }
+    camera.updateProjectionMatrix();
   }
   if (keyboard.pressed('A')) {
     camera.focus -= 0.002 * frame_time;
@@ -198,4 +203,20 @@ function process_keyboard(keyboard: KeyboardState, camera: OrbitalCamera, frame_
   }
 
   keyboard.update();
+}
+
+function handle_pinch(e: PinchEvent, camera: OrbitalCamera) {
+  const { up, right } = camera.vectors;
+  const offset = up.clone().multiplyScalar(e.movement.y * camera.distance * 0.002)
+    .add(right.clone().multiplyScalar(-e.movement.x * camera.distance * 0.002));
+  camera.target.add(offset);
+
+  camera.distance /= e.scale;
+  if (camera.distance < 0.1) {
+    camera.distance = 0.1;
+  }
+  if (camera.distance > 100) {
+    camera.distance = 100;
+  }
+  camera.update_position();
 }
