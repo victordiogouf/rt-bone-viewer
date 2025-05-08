@@ -20,6 +20,8 @@ export class PinchHandler {
     this.element.addEventListener("pointermove", this.handle_pointer_move.bind(this));
     this.element.addEventListener("pointerup", this.handle_pointer_up.bind(this));
     this.element.addEventListener("pointercancel", this.handle_pointer_up.bind(this));
+    this.element.addEventListener("pointerleave", this.handle_pointer_up.bind(this));
+    this.element.addEventListener("pointerout", this.handle_pointer_up.bind(this));
   }
 
   public add_listener(type: PinchType, callback: (e: PinchEvent) => void) {

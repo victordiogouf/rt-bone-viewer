@@ -41,8 +41,8 @@ async function main() {
   
   const keyboard = new KeyboardState();
   
-  wglRenderer.domElement.addEventListener('pointermove', e => process_pointer_move(e, scene, wglRenderer, camera));
-  wglRenderer.domElement.addEventListener('pointerup', e => process_pointer_up(e));
+  wglRenderer.domElement.addEventListener('pointermove', e => process_pointer_move(e, model, wglRenderer, camera));
+  wglRenderer.domElement.addEventListener('pointerup', e => process_pointer_up(e, model, wglRenderer, camera));
   wglRenderer.domElement.addEventListener('mousewheel', e => process_mouse_wheel(e as WheelEvent, camera));
   wglRenderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
   
@@ -75,15 +75,8 @@ let g_intersection: { object: Object3D, material: Material } | null = null;
 let g_selected: { object: Object3D, material: Material } | null = null;
 
 function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRenderer: WebGLRenderer, camera: OrbitalCamera) {
+  wglRenderer.domElement.style.cursor = 'grab';
   if (g_pinching) return;
-
-  // remove highlight
-  if (g_intersection && g_intersection.object.uuid !== g_selected?.object.uuid) {
-    g_intersection.object.children.forEach(child => {
-      (child as any).material.copy(g_intersection!.material);
-    });
-    g_intersection = null;
-  }
   
   if (event.buttons === 1) {
     wglRenderer.domElement.style.cursor = 'grabbing';
@@ -106,45 +99,87 @@ function process_pointer_move(event: PointerEvent, skeleton: Object3D, wglRender
     camera.update_position();
     return;
   }
-  else {
-    wglRenderer.domElement.style.cursor = 'grab';
-  }
 
-  const mouse = new Vector2();
-  mouse.x = (event.clientX / wglRenderer.domElement.clientWidth) * 2 - 1;
-  mouse.y = -(event.clientY / wglRenderer.domElement.clientHeight) * 2 + 1;
-  const raycaster = new Raycaster();
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObject(skeleton, true);
-  if (intersects.length > 0) {
+  const size = new Vector2(wglRenderer.domElement.width, wglRenderer.domElement.height);
+  const point = new Vector2(event.clientX, event.clientY);
+  const intersection = get_intersection(point, size, camera, skeleton);
+  if (intersection) {
     wglRenderer.domElement.style.cursor = 'pointer';
-    g_intersection = { 
-      object: intersects[0].object.parent!, 
-      material: (intersects[0].object as any).material.clone() 
-    };
-    g_intersection.object.children.forEach(child => {
-      (child as any).material.emissive.setHex(0xffffff);
-      (child as any).material.emissiveIntensity = 0.3;
-    });
+    if (g_intersection?.object.uuid === intersection.object.parent!.uuid) return;
+
+    if (g_intersection && g_intersection.object.uuid !== g_selected?.object.uuid) { // remove highlight from previous object
+      g_intersection.object.children.forEach(child => {
+        (child as any).material.copy(g_intersection!.material.clone());
+      });
+    }
+
+    if (g_selected?.object.uuid === intersection.object.parent!.uuid) {
+      g_intersection = g_selected;
+    }
+    else {
+      g_intersection = { 
+        object: intersection.object.parent!, 
+        material: (intersection.object as any).material.clone() 
+      };
+      g_intersection.object.children.forEach(child => {
+        (child as any).material.emissive.setHex(0xffffff);
+        (child as any).material.emissiveIntensity = 0.3;
+      });
+    }
+  }
+  else if (g_intersection) {
+    if (g_intersection.object.uuid !== g_selected?.object.uuid) { // remove highlight from previous object
+      g_intersection.object.children.forEach(child => {
+        (child as any).material.copy(g_intersection!.material.clone());
+      });
+    }
+    g_intersection = null;
   }
 }
 
-function process_pointer_up(event: PointerEvent) {
-  if (event.buttons !== 1) return;
-  if (g_selected?.object.uuid === g_intersection?.object.uuid) {
-    return;
-  }
+function get_intersection(point: Vector2, size: Vector2, camera: OrbitalCamera, object: Object3D) {
+  const pos = new Vector2();
+  pos.x = (point.x / size.x) * 2 - 1;
+  pos.y = -(point.y / size.y) * 2 + 1;
+  const raycaster = new Raycaster();
+  raycaster.setFromCamera(pos, camera);
+  const intersects = raycaster.intersectObject(object, true);
+  return intersects.length > 0 ? intersects[0] : null;
+}
+
+function process_pointer_up(event: PointerEvent, skeleton: Object3D, wglRenderer: WebGLRenderer, camera: OrbitalCamera) {
+  if (event.button !== 0) return;
   
   // deselect current object
   if (g_selected) {
+    if (g_selected.object.uuid === g_intersection?.object.uuid) {
+      g_selected = null;
+      dispatchEvent(new CustomEvent('deselected', {}));
+      return;
+    }
     g_selected.object.children.forEach(child => {
-      (child as any).material.copy(g_selected!.material);
+      (child as any).material.copy(g_selected!.material.clone());
     });
     g_selected = null;
     dispatchEvent(new CustomEvent('deselected', {}));
   }
 
-  if (!g_intersection) return;
+  if (!g_intersection) {
+    const size = new Vector2(wglRenderer.domElement.width, wglRenderer.domElement.height);
+    const point = new Vector2(event.clientX, event.clientY);
+    const intersection = get_intersection(point, size, camera, skeleton);
+    if (!intersection) return;
+    g_selected = {
+      object: intersection.object.parent!,
+      material: (intersection.object as any).material.clone()
+    };
+    g_selected.object.children.forEach(child => {
+      (child as any).material.emissive.setHex(0xffffff);
+      (child as any).material.emissiveIntensity = 0.3;
+    });
+    dispatchEvent(new CustomEvent('selected', { detail: g_selected.object }));
+    return;
+  }
 
   g_selected = g_intersection;
   dispatchEvent(new CustomEvent('selected', { detail: g_selected.object }));

@@ -10,8 +10,8 @@ html, body {
   overflow: hidden;
 }
 
-body {
-  font-family: sans-serif;
+body, button, input, select, textarea {
+  font-family: BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif
 }
 
 canvas {
@@ -28,17 +28,14 @@ canvas {
   align-items: center;
   justify-content: center;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
   width: 42px;
   height: 42px;
   padding: 13px;
   border: 0;
   border-radius: 100%;
   background: #111a;
-}
-
-#show-info img {
-  filter: invert(1);
+  backdrop-filter: blur(10px);
 }
 
 .hidden {
@@ -48,11 +45,12 @@ canvas {
 #info {
   position: absolute;
   bottom: 76px;
-  right: 20px;
+  left: 20px;
   width: 300px;
   padding: 20px;
   border-radius: 10px;
   background: #111a;
+  backdrop-filter: blur(10px);
   color: #fff;
   font-size: 14px;
   line-height: 1.5;
@@ -103,5 +101,47 @@ canvas {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+#selected-bones {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  padding: 0 20px;
+  height: 42px;
+  border: 0;
+  border-radius: 99999px;
+  cursor: pointer;
+  background: #111b;
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#selected-bones h2 {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin-right: 10px;
+}
+
+@media (max-width: 490px) {
+  #selected-bones {
+    bottom: 20px;
+    right: 20px;
+    left: 82px;
+    width: auto;
+    transform: none;
+  }
+
+  #selected-bones h2 {
+    font-size: 16px;
   }
 }

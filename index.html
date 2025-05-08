@@ -9,13 +9,18 @@
   </head>
   <body>
     <script type="module" src="/src/main.ts"></script>
+    <button type="button" id="selected-bones" class="hidden">
+      <h2></h2>
+      <img src="/search.svg" alt="info" />
+    </button>
     <button type="button" id="show-info">
-      <img src="/question.svg" alt="info" />
+      <img src="/menu.svg" alt="info" />
     </button>
     <div id="info" class="hidden">
       <h2>Bone Viewer</h2>
       <p>Click on the bones to see their names.</p>
-      <p>Click on the question mark to hide this message.</p>
+      <p>Click on the names to go to the detailed view of the bones.
+      <p>Click on the menu icon to hide this message.</p>
       <div id="divider"></div>
       <h3>Controls</h3>
       <p>Press and drag to rotate the model.</p>
@@ -29,16 +34,40 @@
       <p>Loading...</p>
     </div>
     <script>
-      const infoButton = document.getElementById('show-info');
+      const info_button = document.getElementById('show-info');
       const info = document.getElementById('info');
 
-      infoButton.addEventListener('click', () => {
+      info_button.addEventListener('click', () => {
         info.classList.toggle('hidden');
+      });
+
+      const selected_button = document.getElementById('selected-bones');
+
+      selected_button.addEventListener('click', () => {
+        const selected = document.querySelector('#selected-bones');
+        selected.classList.add('hidden');
+        dispatchEvent(new CustomEvent('detailed-view', {
+          detail: { name: selected.querySelector('h2').innerText },
+        }));
       });
 
       addEventListener('loaded', () => {
         const loader = document.getElementById('loader');
         loader.classList.add('hidden');
+      });
+
+      addEventListener('selected', (event) => {
+        const selected = document.querySelector('#selected-bones');
+        selected.classList.remove('hidden');
+        const title = document.querySelector('#selected-bones h2');
+        title.innerText = event.detail.userData.name;
+      });
+
+      addEventListener('deselected', () => {
+        const selected = document.querySelector('#selected-bones');
+        selected.classList.add('hidden');
+        const title = document.querySelector('#selected-bones h2');
+        title.innerText = '';
       });
     </script>
   </body>
