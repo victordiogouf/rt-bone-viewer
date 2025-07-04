@@ -13,7 +13,7 @@ export class PinchHandler {
   private event_cache: PointerEvent[] = [];
   private prev_distance: number = 0;
   private listeners: { type: PinchType; callback: (e: PinchEvent) => void }[] = [];
-  
+
   constructor(element: HTMLElement) {
     this.element = element;
     this.element.addEventListener("pointerdown", this.handle_pointer_down.bind(this));

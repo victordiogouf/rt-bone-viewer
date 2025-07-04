@@ -8,7 +8,7 @@ export class OrbitalCamera extends PerspectiveCamera {
   target: Vector3;
 
   constructor(distance: number, vfov: number, aspect_ratio: number) {
-    super(vfov, aspect_ratio, 0.1, 1000);
+    super(vfov, aspect_ratio, 0.01, 100);
     this.polar_angle = 90;
     this.azimuthal_angle = 0;
     this.distance = distance;
@@ -48,5 +48,9 @@ export class OrbitalCamera extends PerspectiveCamera {
     const right = new Vector3().crossVectors(forward, this.up).normalize();
     const up = new Vector3().crossVectors(right, forward);
     return { forward, right, up };
+  }
+
+  get defocus_radius() {
+    return this.focus * Math.tan(0.5 * this.defocus_angle * Math.PI / 180);
   }
 }

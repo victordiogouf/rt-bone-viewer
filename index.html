@@ -46,9 +46,7 @@
       selected_button.addEventListener('click', () => {
         const selected = document.querySelector('#selected-bones');
         selected.classList.add('hidden');
-        dispatchEvent(new CustomEvent('detailed-view', {
-          detail: { name: selected.querySelector('h2').innerText },
-        }));
+        dispatchEvent(new CustomEvent('detailed-view'));
       });
 
       addEventListener('loaded', () => {
