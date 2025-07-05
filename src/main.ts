@@ -6,7 +6,6 @@ import KeyboardState from '../lib/keyboard-state';
 import { OrbitalCamera } from './orbital-camera';
 import { import_gltf } from './importer';
 import { PinchEvent, PinchHandler } from './pinch-handler';
-import { normalize_scale, move_to_origin } from "./importer";
 
 import studio_hall_url from '../assets/env/studio-hall.hdr?url';
 import skeleton_url from '../assets/models/skeleton.glb?url';
@@ -102,8 +101,11 @@ async function main() {
     if (g_selected) {
       const selected_object = g_selected.object.clone();
       const box = new Box3().setFromObject(selected_object, true);
-      const bottom = new Vector3(0, box.min.y - 0.33, 0);
+      const bottom = new Vector3(0, box.min.y - 0.33, 0.09);
       selected_object.position.sub(bottom);
+      selected_object.updateMatrixWorld(true);
+
+      selected_bones_transition(camera, selected_object);
       
       selected_object.children.forEach(child => {
         (child as any).material = g_selected!.material.clone();

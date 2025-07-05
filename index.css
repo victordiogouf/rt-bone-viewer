@@ -132,6 +132,53 @@ canvas {
   margin-right: 10px;
 }
 
+#toggle-rt {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: auto;
+  height: 42px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 99999px;
+  background: #111b;
+  backdrop-filter: blur(10px);
+}
+
+#toggle-rt p {
+  margin-right: 10px;
+  color: #fff;
+  font-size: 14px;
+}
+
+#toggle-rt #toggle-output {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 1px solid #fff2;
+}
+
+#toggle-rt #ball.off {
+  width: 0;
+  height: 0;
+}
+
+#toggle-rt #ball {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: rgb(51, 112, 255);
+  transition: transform 0.3s ease;
+}
+
 @media (max-width: 490px) {
   #selected-bones {
     bottom: 20px;
