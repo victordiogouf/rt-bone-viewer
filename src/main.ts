@@ -1,4 +1,4 @@
-import { FloatType, ACESFilmicToneMapping, AmbientLight, Box3, Clock, DirectionalLight, Material, Object3D, Raycaster, Scene, Vector2, Vector3, WebGLRenderer, EquirectangularReflectionMapping, LinearFilter } from 'three';
+import { FloatType, AmbientLight, Box3, Clock, DirectionalLight, Material, Object3D, Raycaster, Scene, Vector2, Vector3, WebGLRenderer, EquirectangularReflectionMapping, LinearFilter } from 'three';
 import { RGBELoader } from 'three/examples/jsm/Addons.js';
 
 import KeyboardState from '../lib/keyboard-state';
@@ -8,7 +8,10 @@ import { import_gltf } from './importer';
 import { PinchEvent, PinchHandler } from './pinch-handler';
 
 import studio_hall_url from '../assets/env/studio-hall.hdr?url';
-import skeleton_url from '../assets/skeleton.glb?url';
+import skeleton_url from '../assets/models/skeleton.glb?url';
+import mirror_url from '../assets/models/ornate-mirror/ornate_mirror.gltf?url';
+import table_url from '../assets/models/chinese-tea-table/chinese_tea_table.gltf?url';
+import { RayTracingRenderer } from './rt-renderer/ray-tracing-renderer';
 
 main();
 
@@ -23,68 +26,108 @@ async function load_hdr(path: string) {
 }
 
 async function main() {
-  const three_renderer = new WebGLRenderer({ antialias: true });
-  three_renderer.setSize(window.innerWidth, window.innerHeight);
-  three_renderer.setClearColor(0x000000, 1);
-  three_renderer.toneMapping = ACESFilmicToneMapping;
-  document.body.appendChild(three_renderer.domElement);
+  const renderer = new RayTracingRenderer(window.innerWidth, window.innerHeight, 6);
+  document.body.appendChild(renderer.canvas);
+  document.body.appendChild(renderer.threejs_renderer.domElement);
 
   const camera = new OrbitalCamera(1.2, 50, window.innerWidth / window.innerHeight);
 
   const scene = new Scene();
-  const temp_scene = new Scene();
 
   const env = await load_hdr(studio_hall_url);
-  // scene.environment = env;
-  // scene.background = env;
-  
+  const selectable_scene_objects: Object3D[] = [];
+  const rt_scene_objects: Object3D[] = [];
+
+  // Selectable scene objects 
   const light_1 = new DirectionalLight(0xffffff, 0.9);
   light_1.position.set(1, 1, 0);
   light_1.castShadow = true;
-  scene.add(light_1);
+  selectable_scene_objects.push(light_1);
   
   const light_2 = new DirectionalLight(0xffffff, 1.0);
   light_2.position.set(-1.5, -1, 0);
   light_2.castShadow = true;
-  scene.add(light_2);
+  selectable_scene_objects.push(light_2);
   
   const light_3 = new AmbientLight(0xffffff, 0.5);
-  scene.add(light_3);
+  selectable_scene_objects.push(light_3);
   
   const skeleton = await import_gltf(skeleton_url);
-  scene.add(skeleton);
+  selectable_scene_objects.push(skeleton);
+
+  // Raytraced scene objects
+  const mirror = await import_gltf(mirror_url);
+  mirror.position.set(0, 0.5, 0);
+  mirror.scale.set(0.5, 0.5, 0.5);
+  mirror.rotation.set(0, Math.PI / 2, 0);
+  rt_scene_objects.push(mirror);
+  
+  const table = await import_gltf(table_url);
+  rt_scene_objects.push(table);
   
   const keyboard = new KeyboardState();
   
   let pinching = false;
-  const pinch_handler = new PinchHandler(three_renderer.domElement);
-  pinch_handler.add_listener("pinchstart", () => pinching = true);
-  pinch_handler.add_listener("pinchend", () => pinching = false);
-  pinch_handler.add_listener("pinching", e => handle_pinch(e, camera));
+  const pinch_handler_1 = new PinchHandler(renderer.threejs_renderer.domElement);
+  pinch_handler_1.add_listener("pinchstart", () => pinching = true);
+  pinch_handler_1.add_listener("pinchend", () => pinching = false);
+  pinch_handler_1.add_listener("pinching", e => handle_pinch(e, camera));
 
-  three_renderer.domElement.addEventListener('pointermove', e => process_pointer_move(e, skeleton, three_renderer, camera, pinching));
-  three_renderer.domElement.addEventListener('pointerup', e => process_pointer_up(e, skeleton, three_renderer, camera, scene));
-  three_renderer.domElement.addEventListener('mousewheel', e => process_mouse_wheel(e as WheelEvent, camera));
-  three_renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+  const pinch_handler_2 = new PinchHandler(renderer.canvas);
+  pinch_handler_2.add_listener("pinchstart", () => pinching = true);
+  pinch_handler_2.add_listener("pinchend", () => pinching = false);
+  pinch_handler_2.add_listener("pinching", e => handle_pinch(e, camera));
+
+  renderer.threejs_renderer.domElement.addEventListener('pointermove', e => process_pointer_move(e, skeleton, renderer.threejs_renderer, camera, pinching));
+  renderer.threejs_renderer.domElement.addEventListener('pointerup', e => process_pointer_up(e, skeleton, renderer.threejs_renderer, camera));
+  renderer.threejs_renderer.domElement.addEventListener('mousewheel', e => process_mouse_wheel(e as WheelEvent, camera));
+  renderer.threejs_renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+
+  renderer.canvas.addEventListener('pointermove', e => process_pointer_move(e, skeleton, renderer.threejs_renderer, camera, pinching));
+  renderer.canvas.addEventListener('mousewheel', e => process_mouse_wheel(e as WheelEvent, camera));
+  renderer.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   addEventListener('resize', () => {
-    three_renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.set_size(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
   });
 
   addEventListener('detailed-view', () => {
     if (g_selected) {
-      
+      const selected_object = g_selected.object.clone();
+      selected_object.children.forEach(child => {
+        (child as any).material = g_selected!.material.clone();
+      });
+      scene.clear();
+      scene.add(selected_object);
+      scene.environment = env;
+      scene.background = env;
+      scene.add(...rt_scene_objects);
     }
   })
+
+  addEventListener('quit-detailed-view', () => {
+    scene.clear();
+    scene.add(...selectable_scene_objects);
+    scene.environment = null;
+    scene.background = null;
+  });
+
+  addEventListener('start-rt', () => {
+    renderer.rt = true;
+  });
+
+  addEventListener('stop-rt', () => {
+    renderer.rt = false;
+  });
 
   const clock = new Clock();
   clock.start();
 
   const render = () => {
     const frame_time = clock.getDelta();
-    three_renderer.render(scene, camera);
+    renderer.render(scene, camera);
     process_keyboard(keyboard, camera, frame_time);
     requestAnimationFrame(render);
   }
@@ -96,7 +139,7 @@ async function main() {
 let g_intersection: { object: Object3D, material: Material } | null = null;
 let g_selected: { object: Object3D, material: Material } | null = null;
 
-function selected_bones_transition(scene: Scene, camera: OrbitalCamera, target: Object3D) {
+function selected_bones_transition(camera: OrbitalCamera, target: Object3D) {
   const box = new Box3().setFromObject(target);
   const center = box.getCenter(new Vector3());
   const size = box.getSize(new Vector3()).length();
@@ -201,7 +244,7 @@ function get_intersection(point: Vector2, size: Vector2, camera: OrbitalCamera, 
   return intersects.length > 0 ? intersects[0] : null;
 }
 
-function process_pointer_up(event: PointerEvent, skeleton: Object3D, three_renderer: WebGLRenderer, camera: OrbitalCamera, scene: Scene) {
+function process_pointer_up(event: PointerEvent, skeleton: Object3D, three_renderer: WebGLRenderer, camera: OrbitalCamera) {
   if (event.button !== 0) return;
   
   // deselect current object
@@ -236,7 +279,7 @@ function process_pointer_up(event: PointerEvent, skeleton: Object3D, three_rende
   }
 
   g_selected = g_intersection;
-  selected_bones_transition(scene, camera, g_selected.object);
+  selected_bones_transition(camera, g_selected.object);
   dispatchEvent(new CustomEvent('selected', { detail: g_selected.object }));
 }
 

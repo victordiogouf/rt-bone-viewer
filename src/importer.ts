@@ -2,7 +2,11 @@ import { Box3, Mesh, Object3D, Vector3 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 export async function import_gltf(url: string) {
+  if (!url.endsWith('.gltf') && !url.endsWith('.glb'))
+    throw new Error("Invalid GLTF file. Please provide a .gltf or .glb file.");
+  
   const loader = new GLTFLoader();
+  alert(url)
   const gltf = await loader.loadAsync(url);
   gltf.scene.traverse(child => {
     if (child instanceof Mesh) {

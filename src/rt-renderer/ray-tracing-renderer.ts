@@ -1,12 +1,12 @@
-import { OrbitalCamera } from "./orbital-camera";
-import { create_shader_program } from "./shader-program";
+import { OrbitalCamera } from "../orbital-camera";
+import { create_shader_program } from "../shaders/shader-program";
 import { SwapFramebuffer } from "./swap-framebuffer";
 
-import screen_quad_vert_src from './shaders/screen-quad.vert?raw';
-import screen_quad_frag_src from './shaders/screen-quad.frag?raw';
-import ray_tracing_vert_src from './shaders/ray-tracing.vert?raw';
-import ray_tracing_frag_src from './shaders/ray-tracing.frag?raw';
-import { BufferAttribute, Material, Mesh, Scene, Texture, Vector2, Vector3 } from "three";
+import screen_quad_vert_src from '../shaders/screen-quad.vert?raw';
+import screen_quad_frag_src from '../shaders/screen-quad.frag?raw';
+import ray_tracing_vert_src from '../shaders/ray-tracing.vert?raw';
+import ray_tracing_frag_src from '../shaders/ray-tracing.frag?raw';
+import { BufferAttribute, Material, Mesh, Scene, Texture, Vector2, Vector3, WebGLRenderer, ACESFilmicToneMapping } from "three";
 
 export class RayTracingRenderer {
   canvas: HTMLCanvasElement;
@@ -16,6 +16,9 @@ export class RayTracingRenderer {
   screen_quad_vao: WebGLVertexArrayObject;
   sample_count: number = 0;
   max_depth: number;
+  rt: boolean = false;
+
+  threejs_renderer: WebGLRenderer;
 
   constructor(width: number, height: number, max_depth: number) {
     this.canvas = document.createElement('canvas');
@@ -35,6 +38,11 @@ export class RayTracingRenderer {
     this.screen_quad_vao = create_screen_quad(gl);
     this.max_depth = max_depth;
     this.compile_shaders();
+
+    this.threejs_renderer = new WebGLRenderer({ antialias: true });
+    this.threejs_renderer.setSize(width, height);
+    this.threejs_renderer.setClearColor(0x000000, 1);
+    this.threejs_renderer.toneMapping = ACESFilmicToneMapping;
   }
 
   async compile_shaders() {
@@ -46,6 +54,27 @@ export class RayTracingRenderer {
   render(scene: Scene, camera: OrbitalCamera) {  
     if (!this.ray_tracing_program || !this.screen_quad_program) {
       return;
+    }
+
+    if (!this.rt && this.sample_count > 0) { // rt no more
+      this.sample_count = 0;
+      this.canvas.style.display = 'none';
+      this.threejs_renderer.domElement.style.display = 'block';
+    }
+
+    if (!this.rt) {
+      this.threejs_renderer.render(scene, camera);
+      return;
+    }
+
+    if (this.sample_count === 0) { //rasterization no more
+      this.canvas.style.display = 'block';
+      this.threejs_renderer.domElement.style.display = 'none';
+      const gl = this.canvas.getContext('webgl2')!;
+
+      set_camera_uniforms(gl, this.ray_tracing_program, camera);
+      set_environment_uniforms(gl, this.ray_tracing_program, scene);
+      set_meshes_uniforms(gl, this.ray_tracing_program, scene);
     }
 
     ++this.sample_count;
@@ -89,6 +118,8 @@ export class RayTracingRenderer {
     this.canvas.height = height;
     this.framebuffer.destroy(gl);
     this.framebuffer = new SwapFramebuffer(gl, width, height);
+
+    this.threejs_renderer.setSize(width, height);
   }
 };
 
