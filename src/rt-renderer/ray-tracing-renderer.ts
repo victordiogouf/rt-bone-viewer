@@ -9,7 +9,7 @@ import ray_tracing_frag_src from '../shaders/ray-tracing.frag?raw';
 import { BufferAttribute, Material, Mesh, Scene, Texture, Vector2, Vector3, WebGLRenderer, ACESFilmicToneMapping } from "three";
 
 export class RayTracingRenderer {
-  canvas: HTMLCanvasElement;
+  domElement: HTMLCanvasElement;
   framebuffer: SwapFramebuffer;
   ray_tracing_program: WebGLProgram | null = null;
   screen_quad_program: WebGLProgram | null = null;
@@ -21,20 +21,21 @@ export class RayTracingRenderer {
   threejs_renderer: WebGLRenderer;
 
   constructor(width: number, height: number, max_depth: number) {
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.domElement = document.createElement('canvas');
+    this.domElement.width = width;
+    this.domElement.height = height;
+    this.domElement.style.display = 'none'; // hide canvas by default
 
-    const gl = this.canvas.getContext('webgl2');
+    const gl = this.domElement.getContext('webgl2');
     if (!gl) {
       throw new Error('WebGL2 is not supported');
     }
     if (!gl.getExtension('EXT_color_buffer_float')) {
       throw new Error('EXT_color_buffer_float is not supported');
     }
-    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.viewport(0, 0, this.domElement.width, this.domElement.height);
 
-    this.framebuffer = new SwapFramebuffer(gl, this.canvas.width, this.canvas.height);
+    this.framebuffer = new SwapFramebuffer(gl, this.domElement.width, this.domElement.height);
     this.screen_quad_vao = create_screen_quad(gl);
     this.max_depth = max_depth;
     this.compile_shaders();
@@ -46,7 +47,7 @@ export class RayTracingRenderer {
   }
 
   async compile_shaders() {
-    const gl = this.canvas.getContext('webgl2')!;
+    const gl = this.domElement.getContext('webgl2')!;
     this.screen_quad_program = await create_shader_program(gl, screen_quad_vert_src, screen_quad_frag_src);
     this.ray_tracing_program = await create_shader_program(gl, ray_tracing_vert_src, ray_tracing_frag_src);
   }
@@ -58,7 +59,7 @@ export class RayTracingRenderer {
 
     if (!this.rt && this.sample_count > 0) { // rt no more
       this.sample_count = 0;
-      this.canvas.style.display = 'none';
+      this.domElement.style.display = 'none';
       this.threejs_renderer.domElement.style.display = 'block';
     }
 
@@ -68,9 +69,9 @@ export class RayTracingRenderer {
     }
 
     if (this.sample_count === 0) { //rasterization no more
-      this.canvas.style.display = 'block';
+      this.domElement.style.display = 'block';
       this.threejs_renderer.domElement.style.display = 'none';
-      const gl = this.canvas.getContext('webgl2')!;
+      const gl = this.domElement.getContext('webgl2')!;
 
       set_camera_uniforms(gl, this.ray_tracing_program, camera);
       set_environment_uniforms(gl, this.ray_tracing_program, scene);
@@ -79,7 +80,7 @@ export class RayTracingRenderer {
 
     ++this.sample_count;
 
-    const gl = this.canvas.getContext('webgl2')!;
+    const gl = this.domElement.getContext('webgl2')!;
     
     // ray tracing rendering
     this.framebuffer.use(gl);
@@ -112,10 +113,10 @@ export class RayTracingRenderer {
   }
 
   set_size(width: number, height: number) {
-    const gl = this.canvas.getContext('webgl2')!;
+    const gl = this.domElement.getContext('webgl2')!;
     gl.viewport(0, 0, width, height);
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.domElement.width = width;
+    this.domElement.height = height;
     this.framebuffer.destroy(gl);
     this.framebuffer = new SwapFramebuffer(gl, width, height);
 
