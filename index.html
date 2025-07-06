@@ -33,13 +33,43 @@
       <div id="spinner"></div>
       <p>Loading...</p>
     </div>
-    <div id="toggle-rt">
-      <p>Ray Tracing</p>
-      <div id="toggle-output">
-        <div id="ball" class="off"></div>
-      </div>
+    <div id="toggle-rt" class="hidden off">
+      <p>Ray Tracing <strong>OFF</strong></p>
+    </div>
+    <div id="sample-count" class="hidden">
+      <p>Samples: 0</p>
+    </div>
+    <div id="back" class="hidden">
+      <p>Back</p>
     </div>
     <script>
+      const toggle_rt = document.getElementById('toggle-rt');
+      const rt_indicator = toggle_rt.querySelector('p strong');
+      const back_button = document.getElementById('back');
+      const sample_count = document.getElementById('sample-count');
+
+      back_button.addEventListener('click', () => {
+        toggle_rt.classList.add('hidden');
+        back_button.classList.add('hidden');
+        sample_count.classList.add('hidden');
+        dispatchEvent(new CustomEvent('quit-detailed-view'));
+      });
+      
+      toggle_rt.addEventListener('click', () => {
+        toggle_rt.classList.toggle('off');
+        toggle_rt.classList.toggle('on');
+        const isOn = toggle_rt.classList.contains('on');
+        if (isOn) {
+          rt_indicator.innerText = 'ON';
+          sample_count.classList.remove('hidden');
+          dispatchEvent(new CustomEvent('start-rt'));
+        } else {
+          rt_indicator.innerText = 'OFF';
+          sample_count.classList.add('hidden');
+          dispatchEvent(new CustomEvent('stop-rt'));
+        }
+      });
+
       const info_button = document.getElementById('show-info');
       const info = document.getElementById('info');
 
@@ -52,6 +82,8 @@
       selected_button.addEventListener('click', () => {
         const selected = document.querySelector('#selected-bones');
         selected.classList.add('hidden');
+        toggle_rt.classList.remove('hidden');
+        back_button.classList.remove('hidden');
         dispatchEvent(new CustomEvent('detailed-view'));
       });
 
@@ -72,6 +104,11 @@
         selected.classList.add('hidden');
         const title = document.querySelector('#selected-bones h2');
         title.innerText = '';
+      });
+
+      addEventListener('samples', (event) => {
+        const selected = document.querySelector('#sample-count');
+        selected.innerText = `Samples: ${event.detail.samples}`;
       });
     </script>
   </body>

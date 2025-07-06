@@ -6,8 +6,8 @@ precision highp sampler2D;
 precision highp sampler2DArray;
 
 // renderer
-uniform sampler2D u_prev_render;
 uniform sampler2D u_environment;
+uniform sampler2D u_prev_render;
 uniform float u_environment_intensity;
 uniform int u_sample_count;
 uniform int u_max_depth;
@@ -90,9 +90,6 @@ vec3 random_cosine_direction() {
   return vec3(x, y, z);
 }
 
-// <-- RANDOM NUMBER GENERATOR
-
-// --> RAY 
 struct Ray {
   vec3 origin;
   vec3 direction;
@@ -101,7 +98,6 @@ struct Ray {
 vec3 ray_at(Ray ray, float t) {
   return ray.origin + t * ray.direction;
 }
-// <-- RAY
 
 struct HitRecord {
   float t;
@@ -533,7 +529,7 @@ SurfaceData get_surface_data(Ray ray, HitRecord hit_record) {
 }
 
 vec3 texture_environment(vec3 direction) {
-  vec2 uv = vec2(0.5 - atan(direction.z, direction.x) / (2.0 * g_pi), 0.5 - asin(clamp(direction.y, -1.0, 1.0)) / g_pi);
+  vec2 uv = vec2(0.5 - atan(-direction.z, direction.x) / (2.0 * g_pi), 0.5 - asin(clamp(direction.y, -1.0, 1.0)) / g_pi);
   return texture(u_environment, uv).xyz * u_environment_intensity;
 }
 

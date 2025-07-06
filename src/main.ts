@@ -9,7 +9,8 @@ import { PinchEvent, PinchHandler } from './pinch-handler';
 
 import studio_hall_url from '../assets/env/studio-hall.hdr?url';
 import skeleton_url from '../assets/models/skeleton.glb?url';
-import mirror_url from '../assets/models/ornate-mirror/ornate_mirror.gltf?url';
+import mirror_1_url from '../assets/models/mirror-1.glb?url';
+import mirror_2_url from '../assets/models/mirror-2.glb?url';
 import table_url from '../assets/models/chinese-tea-table/chinese_tea_table.gltf?url';
 import { RayTracingRenderer } from './rt-renderer/ray-tracing-renderer';
 
@@ -60,11 +61,17 @@ async function main() {
   scene.add(...selectable_scene_objects);
 
   // Raytraced scene objects
-  const mirror = await import_gltf(mirror_url);
-  mirror.position.set(-0.3, 0.5, -0.3);
-  mirror.scale.set(0.5, 0.5, 0.5);
-  mirror.rotation.set(0, Math.PI / 4, 0);
-  rt_scene_objects.push(mirror);
+  const mirror_1 = await import_gltf(mirror_1_url);
+  mirror_1.position.set(0, 0.3, 0);
+  mirror_1.scale.set(0.1, 0.1, 0.1);
+  mirror_1.rotation.set(0, Math.PI / 4, 0);
+  rt_scene_objects.push(mirror_1);
+
+  const mirror_2 = await import_gltf(mirror_2_url);
+  mirror_2.position.set(-0.3, 0.3, -0.3);
+  mirror_2.scale.set(1.8, 1.8, 1.8);
+  mirror_2.rotation.set(0, Math.PI / 4, 0);
+  rt_scene_objects.push(mirror_2);
   
   const table = await import_gltf(table_url);
   rt_scene_objects.push(table);
@@ -101,8 +108,8 @@ async function main() {
     if (g_selected) {
       const selected_object = g_selected.object.clone();
       const box = new Box3().setFromObject(selected_object, true);
-      const bottom = new Vector3(0, box.min.y - 0.33, 0.09);
-      selected_object.position.sub(bottom);
+      const center = box.getCenter(new Vector3());
+      selected_object.position.sub(center).add(new Vector3(0, 0.7, 0));
       selected_object.updateMatrixWorld(true);
 
       selected_bones_transition(camera, selected_object);
@@ -125,6 +132,7 @@ async function main() {
     scene.environment = null;
     scene.background = null;
     g_detailed_view = false;
+    selected_bones_transition(camera, skeleton);
   });
 
   addEventListener('start-rt', () => {
@@ -141,6 +149,7 @@ async function main() {
   const render = () => {
     const frame_time = clock.getDelta();
     renderer.render(scene, camera);
+    dispatchEvent(new CustomEvent('samples', { detail: { samples: renderer.sample_count } }));
     process_keyboard(keyboard, camera, frame_time);
     requestAnimationFrame(render);
   }
@@ -153,10 +162,10 @@ let g_intersection: { object: Object3D, material: Material } | null = null;
 let g_selected: { object: Object3D, material: Material } | null = null;
 
 function selected_bones_transition(camera: OrbitalCamera, target: Object3D) {
-  const box = new Box3().setFromObject(target);
+  const box = new Box3().setFromObject(target, true);
   const center = box.getCenter(new Vector3());
   const size = box.getSize(new Vector3()).length();
-  const desiredDistance = Math.max(0.6, size * 0.6);
+  const desiredDistance = Math.max(0.9, size * 1.2);
 
   const startTarget = camera.target.clone();
   const startDistance = camera.distance;

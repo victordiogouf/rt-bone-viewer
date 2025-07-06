@@ -7,6 +7,8 @@ import screen_quad_frag_src from '../shaders/screen-quad.frag?raw';
 import ray_tracing_vert_src from '../shaders/ray-tracing.vert?raw';
 import ray_tracing_frag_src from '../shaders/ray-tracing.frag?raw';
 import { BufferAttribute, Material, Mesh, Scene, Texture, Vector2, Vector3, WebGLRenderer, ACESFilmicToneMapping } from "three";
+import { Bvh } from "./bvh";
+import { TextureData } from "./texture-data";
 
 export class RayTracingRenderer {
   domElement: HTMLCanvasElement;
@@ -178,7 +180,29 @@ function set_environment_uniforms(gl: WebGL2RenderingContext, program: WebGLProg
   gl.uniform1f(gl.getUniformLocation(program, 'u_environment_intensity'), scene.environmentIntensity);
 }
 
+let g_positions_texture: WebGLTexture | null = null;
+let g_normals_texture: WebGLTexture | null = null;
+let g_uvs_texture: WebGLTexture | null = null;
+let g_tangents_texture: WebGLTexture | null = null;
+let g_indices_texture: WebGLTexture | null = null;
+let g_materials_texture: WebGLTexture | null = null;
+let g_material_indices_texture: WebGLTexture | null = null;
+let g_bvh_texture: WebGLTexture | null = null;
+let g_texture_params_texture: WebGLTexture | null = null;
+let g_textures_texture: WebGLTexture | null = null;
+
 function set_meshes_uniforms(gl: WebGL2RenderingContext, program: WebGLProgram, scene: Scene) {
+  gl.deleteTexture(g_positions_texture);
+  gl.deleteTexture(g_normals_texture);
+  gl.deleteTexture(g_uvs_texture);
+  gl.deleteTexture(g_tangents_texture);
+  gl.deleteTexture(g_indices_texture);
+  gl.deleteTexture(g_materials_texture);
+  gl.deleteTexture(g_material_indices_texture);
+  gl.deleteTexture(g_bvh_texture);
+  gl.deleteTexture(g_texture_params_texture);
+  gl.deleteTexture(g_textures_texture);
+
   const positions: Vector3[] = [];
   const normals: Vector3[] = [];
   const uvs: Vector2[] = [];
@@ -189,6 +213,7 @@ function set_meshes_uniforms(gl: WebGL2RenderingContext, program: WebGLProgram, 
   const textures: Texture[] = [];
   const texture_indices = new Map<string, number>();
 
+  // Merging all meshes and extracting their attributes
   scene.traverse(obj => {
     obj.updateMatrixWorld();
     if (!(obj instanceof Mesh)) return;
@@ -216,6 +241,7 @@ function set_meshes_uniforms(gl: WebGL2RenderingContext, program: WebGLProgram, 
     }
 
     const mesh_materials = obj.material instanceof Array ? obj.material : [obj.material];
+
     mesh_materials.forEach(m => {
       const indices = {
         albedo: -1,
@@ -356,4 +382,171 @@ function set_meshes_uniforms(gl: WebGL2RenderingContext, program: WebGLProgram, 
     }
   })
 
+  // create bvh from attributes
+  const bvh = new Bvh(
+    new Float32Array(positions.flatMap(p => [p.x, p.y, p.z])),
+    new Float32Array(indices),
+    indices.length
+  );
+
+  // set uniforms
+  gl.useProgram(program);
+  gl.uniform1i(gl.getUniformLocation(program, "u_max_texture_size"), gl.MAX_TEXTURE_SIZE);
+  gl.uniform1i(gl.getUniformLocation(program, "u_bvh_length"), bvh.list.length);
+
+  // position buffer
+  const position_data = new TextureData(
+    positions.length,
+    1,
+    3,
+    gl.MAX_TEXTURE_SIZE
+  );
+  position_data.data.set(new Float32Array(positions.flatMap(p => [p.x, p.y, p.z])), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_positions"), 2);
+  gl.activeTexture(gl.TEXTURE2);
+  g_positions_texture = position_data.create_texture(gl);
+
+  // normal buffer
+  const normal_data = new TextureData(
+    normals.length,
+    1,
+    3,
+    gl.MAX_TEXTURE_SIZE
+  );
+  normal_data.data.set(new Float32Array(normals.flatMap(n => [n.x, n.y, n.z])), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_normals"), 3);
+  gl.activeTexture(gl.TEXTURE3);
+  g_normals_texture = normal_data.create_texture(gl);
+
+  // uv buffer
+  const uv_data = new TextureData(
+    uvs.length,
+    1,
+    2,
+    gl.MAX_TEXTURE_SIZE
+  );
+  uv_data.data.set(new Float32Array(uvs.flatMap(u => [u.x, u.y])), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_uvs"), 4);
+  gl.activeTexture(gl.TEXTURE4);
+  g_uvs_texture = uv_data.create_texture(gl);
+
+  // tangent buffer
+  const tangent_data = new TextureData(
+    tangents.length,
+    1,
+    3,
+    gl.MAX_TEXTURE_SIZE
+  );
+  tangent_data.data.set(new Float32Array(tangents.flatMap(t => [t.x, t.y, t.z])), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_tangents"), 5);
+  gl.activeTexture(gl.TEXTURE5);
+  g_tangents_texture = tangent_data.create_texture(gl);
+
+  // indices buffer
+  const indices_data = new TextureData(
+    indices.length,
+    1,
+    1,
+    gl.MAX_TEXTURE_SIZE
+  );
+  indices_data.data.set(new Float32Array(indices), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_indices"), 6);
+  gl.activeTexture(gl.TEXTURE6);
+  g_indices_texture = indices_data.create_texture(gl);
+
+  // materials buffer 
+  const materials_data = new TextureData(
+    materials.length / 20,
+    5,
+    4,
+    gl.MAX_TEXTURE_SIZE
+  );
+  materials_data.data.set(new Float32Array(materials), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_materials"), 7);
+  gl.activeTexture(gl.TEXTURE7);
+  g_materials_texture = materials_data.create_texture(gl);
+
+  // material indices buffer
+  const material_indices_data = new TextureData(
+    material_indices.length,
+    1,
+    1,
+    gl.MAX_TEXTURE_SIZE
+  );
+  material_indices_data.data.set(new Float32Array(material_indices), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_material_indices"), 8);
+  gl.activeTexture(gl.TEXTURE8);
+  g_material_indices_texture = material_indices_data.create_texture(gl);
+
+  // bvh buffer
+  const bvh_data = new TextureData(
+    bvh.list.length,
+    2,
+    4,
+    gl.MAX_TEXTURE_SIZE
+  );
+  bvh_data.data.set(new Float32Array(bvh.list.flatMap(b => [b.left_index, b.parent_index, ...b.aabb.to_array()])), 0);
+  gl.uniform1i(gl.getUniformLocation(program, "u_bvh"), 9);
+  gl.activeTexture(gl.TEXTURE9);
+  g_bvh_texture = bvh_data.create_texture(gl);
+
+  // texture params buffer
+  const texture_params_data = new TextureData(
+    textures.length,
+    2,
+    4,
+    gl.MAX_TEXTURE_SIZE
+  );
+
+  gl.uniform1i(gl.getUniformLocation(program, "u_textures"), 10);
+  gl.activeTexture(gl.TEXTURE10);
+
+  if (textures.length > 0) {
+    let max_width = 0;
+    let max_height = 0;
+    
+    textures.forEach(t => {
+      if (t.image.width > max_width) max_width = t.image.width;
+      if (t.image.height > max_height) max_height = t.image.height;
+    });
+
+    g_textures_texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, g_textures_texture);
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, max_width, max_height, textures.length);
+
+    textures.forEach((t, i) => {
+      texture_params_data.data.set([
+        t.image.width / max_width,
+        t.image.height / max_height,
+        t.flipY ? 1 : 0,
+        t.rotation,
+        t.repeat.x, 
+        t.repeat.y,
+        t.offset.x,
+        t.offset.y
+      ], i * 8);
+
+      gl.texSubImage3D(
+        gl.TEXTURE_2D_ARRAY,
+        0,
+        0, 
+        0,
+        i,
+        t.image.width, 
+        t.image.height, 
+        1,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        t.image
+      );
+    });
+  }
+  else {
+    g_textures_texture = null;
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, null);
+  }
+
+  gl.uniform1i(gl.getUniformLocation(program, "u_texture_params"), 11);
+  gl.activeTexture(gl.TEXTURE11);
+  g_texture_params_texture = texture_params_data.create_texture(gl);
 }
