@@ -11,7 +11,7 @@ import studio_hall_url from '../assets/env/studio-hall.hdr?url';
 import skeleton_url from '../assets/models/skeleton.glb?url';
 import mirror_1_url from '../assets/models/mirror-1.glb?url';
 import mirror_2_url from '../assets/models/mirror-2.glb?url';
-import table_url from '../assets/models/chinese-tea-table/chinese_tea_table.gltf?url';
+import table_url from '../assets/models/wooden-table.glb?url';
 import { RayTracingRenderer } from './rt-renderer/ray-tracing-renderer';
 
 main();
@@ -62,18 +62,19 @@ async function main() {
 
   // Raytraced scene objects
   const mirror_1 = await import_gltf(mirror_1_url);
-  mirror_1.position.set(0, 0.3, 0);
+  mirror_1.position.set(0, 0.295, 0);
   mirror_1.scale.set(0.1, 0.1, 0.1);
   mirror_1.rotation.set(0, Math.PI / 4, 0);
   rt_scene_objects.push(mirror_1);
 
   const mirror_2 = await import_gltf(mirror_2_url);
-  mirror_2.position.set(-0.3, 0.3, -0.3);
+  mirror_2.position.set(-0.25, 0.3, -0.25);
   mirror_2.scale.set(1.8, 1.8, 1.8);
   mirror_2.rotation.set(0, Math.PI / 4, 0);
   rt_scene_objects.push(mirror_2);
   
   const table = await import_gltf(table_url);
+  table.position.sub(new Vector3(0, 0.075, 0));
   rt_scene_objects.push(table);
   
   const keyboard = new KeyboardState();
