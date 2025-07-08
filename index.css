@@ -21,6 +21,13 @@ canvas {
   touch-action: none;
 }
 
+.block {
+  background: #111a;
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 14px;
+}
+
 #show-info {
   position: absolute;
   display: flex;
@@ -34,8 +41,6 @@ canvas {
   padding: 13px;
   border: 0;
   border-radius: 100%;
-  background: #111a;
-  backdrop-filter: blur(10px);
 }
 
 .hidden {
@@ -153,6 +158,25 @@ canvas {
 #toggle-rt p { 
   color: #fff;
   font-size: 14px;
+}
+
+#toggle-rt p strong {
+  font-weight: 600;
+}
+
+#toggle-rt #modal {
+  position: absolute;
+  text-align: center;
+  width: 250px;
+  bottom: calc(100% + 10px);
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px;
+  display: none;
+}
+
+#toggle-rt:hover #modal {
+  display: block;
 }
 
 #back, #sample-count{

@@ -13,10 +13,10 @@
       <h2></h2>
       <img src="/search.svg" alt="info" />
     </button>
-    <button type="button" id="show-info">
+    <button type="button" id="show-info" class="block">
       <img src="/menu.svg" alt="info" />
     </button>
-    <div id="info" class="hidden">
+    <div id="info" class="hidden block">
       <h2>Bone Viewer</h2>
       <p>Click on the bones to see their names.</p>
       <p>Click on the names to go to the detailed view of the bones.
@@ -35,6 +35,10 @@
     </div>
     <div id="toggle-rt" class="hidden off">
       <p>Ray Tracing <strong>OFF</strong></p>
+      <div id="modal" class="block">
+        <p>Click to toggle Ray Tracing</p>
+        <p><strong>Warning</strong>: Performance may be an issue. Wait untill it is activated.</p>
+      </div>
     </div>
     <div id="sample-count" class="hidden">
       <p>Samples: 0</p>
@@ -62,10 +66,12 @@
         if (isOn) {
           rt_indicator.innerText = 'ON';
           sample_count.classList.remove('hidden');
+          back_button.classList.add('hidden');
           dispatchEvent(new CustomEvent('start-rt'));
         } else {
           rt_indicator.innerText = 'OFF';
           sample_count.classList.add('hidden');
+          back_button.classList.remove('hidden');
           dispatchEvent(new CustomEvent('stop-rt'));
         }
       });

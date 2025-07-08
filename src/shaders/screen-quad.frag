@@ -10,7 +10,7 @@ uniform int u_sample_count;
 out vec4 o_color;
 
 vec3 gamma_correct(vec3 color) {
-  return pow(color, vec3(1.0 / 2.2));
+  return pow(color, vec3(1.0 / 2.0));
 }
 
 vec3 aces_tonemap(vec3 x) {
