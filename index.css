@@ -21,11 +21,16 @@ canvas {
   touch-action: none;
 }
 
+button {
+  cursor: pointer;
+}
+
 .block {
   background: #111a;
   backdrop-filter: blur(10px);
   color: #fff;
   font-size: 14px;
+  border-radius: 12px;
 }
 
 #show-info {
@@ -34,8 +39,8 @@ canvas {
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  bottom: 20px;
-  left: 20px;
+  top: 12px;
+  right: 12px;
   width: 42px;
   height: 42px;
   padding: 13px;
@@ -49,11 +54,11 @@ canvas {
 
 #info {
   position: absolute;
-  bottom: 76px;
-  left: 20px;
+  top: 66px;
+  right: 20px;
   width: 300px;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #111a;
   backdrop-filter: blur(10px);
   color: #fff;
@@ -121,7 +126,7 @@ canvas {
   padding: 0 20px;
   height: 42px;
   border: 0;
-  border-radius: 99999px;
+  border-radius: 12px;
   cursor: pointer;
   background: #111b;
   backdrop-filter: blur(10px);
@@ -139,7 +144,7 @@ canvas {
 
 #toggle-rt {
   position: absolute;
-  bottom: 20px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -148,9 +153,9 @@ canvas {
   cursor: pointer;
   width: auto;
   height: 42px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 0;
-  border-radius: 99999px;
+  border-radius: 12px;
   background: #111b;
   backdrop-filter: blur(10px);
 }
@@ -173,6 +178,8 @@ canvas {
   border-radius: 12px;
   padding: 10px;
   display: none;
+  background: #111b;
+  backdrop-filter: blur(10px);
 }
 
 #toggle-rt:hover #modal {
@@ -181,8 +188,8 @@ canvas {
 
 #back, #sample-count{
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 12px;
+  left: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,7 +198,7 @@ canvas {
   height: 42px;
   padding: 0 10px;
   border: 0;
-  border-radius: 99999px;
+  border-radius: 1000px;
   background: #111b;
   backdrop-filter: blur(10px);
   color: #fff;
@@ -202,8 +209,8 @@ canvas {
   cursor: default;
   top: auto;
   left: auto;
-  bottom: 20px;
-  right: 20px;
+  bottom: 12px;
+  right: 12px;
 }
 
 @media (max-width: 490px) {

@@ -18,6 +18,14 @@
     </button>
     <div id="info" class="hidden block">
       <h2>Bone Viewer</h2>
+      <div id="env" class="hidden">
+        <p>Environment:</p>
+        <select id="env-select">
+          <option value="env-2">Environment 2</option>
+          <option value="env-1">Environment 1</option>
+        </select>
+      </div>
+      <div id="divider"></div>
       <p>Click on the bones to see their names.</p>
       <p>Click on the names to go to the detailed view of the bones.
       <p>Click on the menu icon to hide this message.</p>
@@ -37,6 +45,7 @@
       <p>Ray Tracing <strong>OFF</strong></p>
       <div id="modal" class="block">
         <p>Click to toggle Ray Tracing</p>
+        <br />
         <p><strong>Warning</strong>: Performance may be an issue. Wait untill it is activated.</p>
       </div>
     </div>
@@ -44,9 +53,21 @@
       <p>Samples: 0</p>
     </div>
     <div id="back" class="hidden">
-      <p>Back</p>
+      <img src="/arrow-back.svg" alt="info" />
     </div>
     <script>
+      const env = document.getElementById('env');
+      const env_select = document.getElementById('env-select');
+
+      env_select.addEventListener('change', (event) => {
+        const selectedEnv = event.target.value;
+        if (selectedEnv === 'env-1') {
+          dispatchEvent(new CustomEvent('set-env-1'));
+        } else if (selectedEnv === 'env-2') {
+          dispatchEvent(new CustomEvent('set-env-2'));
+        }
+      });
+
       const toggle_rt = document.getElementById('toggle-rt');
       const rt_indicator = toggle_rt.querySelector('p strong');
       const back_button = document.getElementById('back');
@@ -56,6 +77,8 @@
         toggle_rt.classList.add('hidden');
         back_button.classList.add('hidden');
         sample_count.classList.add('hidden');
+        env.classList.add('hidden');
+        env_select.value = 'env-2';
         dispatchEvent(new CustomEvent('quit-detailed-view'));
       });
       
@@ -67,11 +90,13 @@
           rt_indicator.innerText = 'ON';
           sample_count.classList.remove('hidden');
           back_button.classList.add('hidden');
+          env.classList.add('hidden');
           dispatchEvent(new CustomEvent('start-rt'));
         } else {
           rt_indicator.innerText = 'OFF';
           sample_count.classList.add('hidden');
           back_button.classList.remove('hidden');
+          env.classList.remove('hidden');
           dispatchEvent(new CustomEvent('stop-rt'));
         }
       });
@@ -90,6 +115,7 @@
         selected.classList.add('hidden');
         toggle_rt.classList.remove('hidden');
         back_button.classList.remove('hidden');
+        env.classList.remove('hidden');
         dispatchEvent(new CustomEvent('detailed-view'));
       });
 

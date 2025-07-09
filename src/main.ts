@@ -8,6 +8,7 @@ import { import_gltf } from './importer';
 import { PinchEvent, PinchHandler } from './pinch-handler';
 
 import studio_hall_url from '../assets/env/studio-hall.hdr?url';
+import pure_sky_url from '../assets/env/pure-sky.hdr?url';
 import skeleton_url from '../assets/models/skeleton.glb?url';
 import mirror_1_url from '../assets/models/mirror-1.glb?url';
 import mirror_2_url from '../assets/models/mirror-2.glb?url';
@@ -37,7 +38,9 @@ async function main() {
 
   const scene = new Scene();
 
-  const env = await load_hdr(studio_hall_url);
+  const env_2 = await load_hdr(studio_hall_url);
+  const env_1 = await load_hdr(pure_sky_url);
+  let env = env_2;
   const selectable_scene_objects: Object3D[] = [];
   const rt_scene_objects: Object3D[] = [];
 
@@ -107,6 +110,10 @@ async function main() {
 
   addEventListener('detailed-view', () => {
     if (g_selected) {
+      g_selected.object.children.forEach(child => {
+        (child as any).material = g_selected!.material.clone();
+      });
+
       const selected_object = g_selected.object.clone();
       const box = new Box3().setFromObject(selected_object, true);
       const center = box.getCenter(new Vector3());
@@ -115,9 +122,6 @@ async function main() {
 
       selected_bones_transition(camera, selected_object);
       
-      selected_object.children.forEach(child => {
-        (child as any).material = g_selected!.material.clone();
-      });
       scene.clear();
       scene.add(selected_object);
       scene.environment = env;
@@ -132,6 +136,7 @@ async function main() {
     scene.add(...selectable_scene_objects);
     scene.environment = null;
     scene.background = null;
+    env = env_2;
     g_detailed_view = false;
     selected_bones_transition(camera, skeleton);
   });
@@ -142,6 +147,35 @@ async function main() {
 
   addEventListener('stop-rt', () => {
     renderer.rt = false;
+  });
+
+  addEventListener('set-env-1', () => {
+    env = env_1;
+    scene.environment = env;
+    scene.background = env;
+    scene.clear();
+
+    const selected_object = g_selected!.object.clone();
+    const box = new Box3().setFromObject(selected_object, true);
+    const center = box.getCenter(new Vector3());
+    selected_object.position.sub(center).add(new Vector3(0, 0.7, 0));
+    selected_object.updateMatrixWorld(true);
+    scene.add(selected_object);
+  });
+
+  addEventListener('set-env-2', () => {
+    env = env_2;
+    scene.environment = env;
+    scene.background = env;
+    scene.clear();
+    scene.add(...rt_scene_objects);
+
+    const selected_object = g_selected!.object.clone();
+    const box = new Box3().setFromObject(selected_object, true);
+    const center = box.getCenter(new Vector3());
+    selected_object.position.sub(center).add(new Vector3(0, 0.7, 0));
+    selected_object.updateMatrixWorld(true);
+    scene.add(selected_object);
   });
 
   const clock = new Clock();
