@@ -1,4 +1,4 @@
-import { FloatType, AmbientLight, Box3, Clock, DirectionalLight, Material, Object3D, Raycaster, Scene, Vector2, Vector3, WebGLRenderer, EquirectangularReflectionMapping, DataTexture, RGBAFormat } from 'three';
+import { AmbientLight, Box3, Clock, DirectionalLight, Material, Object3D, Raycaster, Scene, Vector2, Vector3, WebGLRenderer } from 'three';
 
 import KeyboardState from '../lib/keyboard-state';
 
