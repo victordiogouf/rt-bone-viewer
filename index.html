@@ -9,20 +9,24 @@
   </head>
   <body>
     <script type="module" src="/src/main.ts"></script>
-    <button type="button" id="selected-bones" class="hidden">
+
+    <button type="button" id="selected-bones" class="block hidden">
       <h2></h2>
       <img src="/search.svg" alt="info" />
     </button>
+
     <button type="button" id="show-info" class="block">
       <img src="/menu.svg" alt="info" />
     </button>
+
     <div id="info" class="hidden block">
       <h2>Bone Viewer</h2>
       <div id="env" class="hidden">
         <p>Environment:</p>
         <select id="env-select">
-          <option value="env-2">Environment 2</option>
-          <option value="env-1">Environment 1</option>
+          <option value="env-2">Room</option>
+          <option value="env-1">Sky</option>
+          <option value="env-0">Gray</option>
         </select>
       </div>
       <div id="divider"></div>
@@ -37,24 +41,30 @@
       <div id="divider"></div>
       <p>Skeleton data from "BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International"</p>
     </div>
-    <div id="loader">
+
+    <div id="loading">
       <div id="spinner"></div>
       <p>Loading...</p>
     </div>
-    <div id="toggle-rt" class="hidden off">
+
+    <div id="toggle-rt" class="block hidden off">
       <p>Ray Tracing <strong>OFF</strong></p>
-      <div id="modal" class="block">
-        <p>Click to toggle Ray Tracing</p>
-        <br />
-        <p><strong>Warning</strong>: Performance may be an issue. Wait untill it is activated.</p>
-      </div>
     </div>
-    <div id="sample-count" class="hidden">
+
+    <div id="modal" class="block hidden">
+      <p>Click to toggle Ray Tracing</p>
+      <br />
+      <p><strong>Warning</strong>: Performance may be an issue. Wait untill it is activated.</p>
+    </div>
+
+    <div id="sample-count" class="block hidden">
       <p>Samples: 0</p>
     </div>
-    <div id="back" class="hidden">
+
+    <div id="back" class="hidden block">
       <img src="/arrow-back.svg" alt="info" />
     </div>
+
     <script>
       const env = document.getElementById('env');
       const env_select = document.getElementById('env-select');
@@ -65,6 +75,8 @@
           dispatchEvent(new CustomEvent('set-env-1'));
         } else if (selectedEnv === 'env-2') {
           dispatchEvent(new CustomEvent('set-env-2'));
+        } else if (selectedEnv === 'env-0') {
+          dispatchEvent(new CustomEvent('set-env-0'));
         }
       });
 
@@ -80,6 +92,14 @@
         env.classList.add('hidden');
         env_select.value = 'env-2';
         dispatchEvent(new CustomEvent('quit-detailed-view'));
+      });
+
+      toggle_rt.addEventListener('mouseover', () => {
+        document.getElementById('modal').classList.remove('hidden');
+      });
+
+      toggle_rt.addEventListener('mouseout', () => {
+        document.getElementById('modal').classList.add('hidden');
       });
       
       toggle_rt.addEventListener('click', () => {
@@ -120,7 +140,7 @@
       });
 
       addEventListener('loaded', () => {
-        const loader = document.getElementById('loader');
+        const loader = document.getElementById('loading');
         loader.classList.add('hidden');
       });
 

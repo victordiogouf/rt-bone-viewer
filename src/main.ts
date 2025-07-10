@@ -1,14 +1,14 @@
-import { FloatType, AmbientLight, Box3, Clock, DirectionalLight, Material, Object3D, Raycaster, Scene, Vector2, Vector3, WebGLRenderer, EquirectangularReflectionMapping, LinearFilter } from 'three';
-import { RGBELoader } from 'three/examples/jsm/Addons.js';
+import { FloatType, AmbientLight, Box3, Clock, DirectionalLight, Material, Object3D, Raycaster, Scene, Vector2, Vector3, WebGLRenderer, EquirectangularReflectionMapping, DataTexture, RGBAFormat } from 'three';
 
 import KeyboardState from '../lib/keyboard-state';
 
 import { OrbitalCamera } from './orbital-camera';
-import { import_gltf } from './importer';
+import { import_env, import_gltf } from './importer';
 import { PinchEvent, PinchHandler } from './pinch-handler';
 
 import studio_hall_url from '../assets/env/studio-hall.hdr?url';
 import pure_sky_url from '../assets/env/pure-sky.hdr?url';
+import main_url from '../assets/env/main.png?url';
 import skeleton_url from '../assets/models/skeleton.glb?url';
 import mirror_1_url from '../assets/models/mirror-1.glb?url';
 import mirror_2_url from '../assets/models/mirror-2.glb?url';
@@ -16,16 +16,6 @@ import table_url from '../assets/models/wooden-table.glb?url';
 import { RayTracingRenderer } from './rt-renderer/ray-tracing-renderer';
 
 main();
-
-async function load_hdr(path: string) {
-  const loader = new RGBELoader().setDataType(FloatType);
-  const env = await loader.loadAsync(path);
-  env.mapping = EquirectangularReflectionMapping;
-  env.needsUpdate = true;
-  env.minFilter = LinearFilter;
-  env.magFilter = LinearFilter;
-  return env;
-}
 
 let g_detailed_view = false;
 
@@ -38,8 +28,9 @@ async function main() {
 
   const scene = new Scene();
 
-  const env_2 = await load_hdr(studio_hall_url);
-  const env_1 = await load_hdr(pure_sky_url);
+  const env_2 = await import_env(studio_hall_url);
+  const env_1 = await import_env(pure_sky_url);
+  const env_0 = await import_env(main_url);
   let env = env_2;
   const selectable_scene_objects: Object3D[] = [];
   const rt_scene_objects: Object3D[] = [];
@@ -147,6 +138,25 @@ async function main() {
 
   addEventListener('stop-rt', () => {
     renderer.rt = false;
+  });
+
+  addEventListener('set-env-0', () => {
+    env = env_0;
+    scene.environment = env;
+    scene.background = env;
+    scene.clear();
+
+    const light = new DirectionalLight(0xffffff, 1.0);
+    light.position.set(0, 0, 1);
+    light.castShadow = true;
+    scene.add(light);
+
+    const selected_object = g_selected!.object.clone();
+    const box = new Box3().setFromObject(selected_object, true);
+    const center = box.getCenter(new Vector3());
+    selected_object.position.sub(center).add(new Vector3(0, 0.7, 0));
+    selected_object.updateMatrixWorld(true);
+    scene.add(selected_object);
   });
 
   addEventListener('set-env-1', () => {

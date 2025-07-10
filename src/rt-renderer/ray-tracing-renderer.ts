@@ -172,7 +172,10 @@ function set_environment_uniforms(gl: WebGL2RenderingContext, program: WebGLProg
   gl.uniform1i(gl.getUniformLocation(program, 'u_environment'), 1);
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, env_texture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, scene.environment.image.width, scene.environment.image.height, 0, gl.RGBA, gl.FLOAT, scene.environment.image.data);
+  const image = scene.environment.image instanceof HTMLImageElement
+    ? scene.environment.image
+    : scene.environment.image.data;
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, scene.environment.image.width, scene.environment.image.height, 0, gl.RGBA, gl.FLOAT, image);
   const param = gl.getExtension('OES_texture_float_linear') ? gl.LINEAR : gl.NEAREST;
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, param);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, param);
