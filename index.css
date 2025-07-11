@@ -60,13 +60,12 @@ button {
   width: 300px;
 }
 
-#info h2, h3 {
+#info h2 {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 4px;
 }
 
-#info h3, p {
+#info p {
   width: 100%;
 }
 
@@ -120,7 +119,7 @@ button {
 
 #selected-bones {
   position: absolute;
-  bottom: 20px;
+  bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
   width: auto;
@@ -135,18 +134,23 @@ button {
   margin-right: 10px;
 }
 
-#toggle-rt {
+#options {
+  display: flex;
+  gap: 12px;
   position: absolute;
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  cursor: pointer;
   width: auto;
-  height: 42px;
 }
 
-#toggle-rt p strong {
+#options strong {
   font-weight: 600;
+}
+
+#toggle-rt, #toggle-env {
+  height: 42px;
+  flex-direction: column;
 }
 
 #modal {
@@ -167,12 +171,4 @@ button {
   cursor: pointer;
   width: auto;
   height: 42px;
-}
-
-#sample-count {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  height: 42px;
-  min-width: 120px;
 }

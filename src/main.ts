@@ -82,16 +82,16 @@ async function main() {
   const pinch_handler_2 = new PinchHandler(renderer.domElement);
   pinch_handler_2.add_listener("pinchstart", () => pinching = true);
   pinch_handler_2.add_listener("pinchend", () => pinching = false);
-  pinch_handler_2.add_listener("pinching", e => handle_pinch(e, camera));
+  pinch_handler_2.add_listener("pinching", e => renderer.rt || handle_pinch(e, camera));
 
   renderer.threejs_renderer.domElement.addEventListener('pointermove', e => process_pointer_move(e, skeleton, renderer.threejs_renderer, camera, pinching));
   renderer.threejs_renderer.domElement.addEventListener('pointerup', e => process_pointer_up(e, skeleton, renderer.threejs_renderer, camera));
   renderer.threejs_renderer.domElement.addEventListener('mousewheel', e => process_mouse_wheel(e as WheelEvent, camera));
   renderer.threejs_renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
 
-  renderer.domElement.addEventListener('pointermove', e => process_pointer_move(e, skeleton, renderer, camera, pinching));
-  renderer.domElement.addEventListener('mousewheel', e => process_mouse_wheel(e as WheelEvent, camera));
-  renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+  renderer.domElement.addEventListener('pointermove', e => renderer.rt || process_pointer_move(e, skeleton, renderer, camera, pinching));
+  renderer.domElement.addEventListener('mousewheel', e => renderer.rt || process_mouse_wheel(e as WheelEvent, camera));
+  renderer.domElement.addEventListener('contextmenu', e => renderer.rt || e.preventDefault());
 
   addEventListener('resize', () => {
     renderer.set_size(window.innerWidth, window.innerHeight);
@@ -147,9 +147,14 @@ async function main() {
     scene.clear();
 
     const light = new DirectionalLight(0xffffff, 1.0);
-    light.position.set(0, 0, 1);
+    light.position.set(-0.5, 0, 1);
     light.castShadow = true;
     scene.add(light);
+
+    const light2 = new DirectionalLight(0xffffff, 0.5);
+    light2.position.set(0.5, 0, -1);
+    light2.castShadow = true;
+    scene.add(light2);
 
     const selected_object = g_selected!.object.clone();
     const box = new Box3().setFromObject(selected_object, true);
@@ -194,7 +199,6 @@ async function main() {
   const render = () => {
     const frame_time = clock.getDelta();
     renderer.render(scene, camera);
-    dispatchEvent(new CustomEvent('samples', { detail: { samples: renderer.sample_count } }));
     process_keyboard(keyboard, camera, frame_time);
     requestAnimationFrame(render);
   }
@@ -238,7 +242,7 @@ function selected_bones_transition(camera: OrbitalCamera, target: Object3D) {
   animate();
 }
 
-function process_pointer_move(event: PointerEvent, skeleton: Object3D, renderer: WebGLRenderer | RayTracingRenderer, camera: OrbitalCamera, pinching: boolean) {
+function process_pointer_move(event: PointerEvent, skeleton: Object3D, renderer: WebGLRenderer | RayTracingRenderer, camera: OrbitalCamera, pinching: boolean) { 
   renderer.domElement.style.cursor = 'grab';
   if (pinching) return;
   

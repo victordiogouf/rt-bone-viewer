@@ -21,20 +21,9 @@
 
     <div id="info" class="hidden block">
       <h2>Bone Viewer</h2>
-      <div id="env" class="hidden">
-        <p>Environment:</p>
-        <select id="env-select">
-          <option value="env-2">Room</option>
-          <option value="env-1">Sky</option>
-          <option value="env-0">Gray</option>
-        </select>
-      </div>
       <div id="divider"></div>
       <p>Click on the bones to see their names.</p>
-      <p>Click on the names to go to the detailed view of the bones.
-      <p>Click on the menu icon to hide this message.</p>
-      <div id="divider"></div>
-      <h3>Controls</h3>
+      <p>Click on the names to go to the detailed view.</p>
       <p>Press and drag to rotate the model.</p>
       <p>Scroll or pinch to zoom in and out.</p>
       <p>Press mouse right and drag to pan the model.</p>
@@ -47,8 +36,15 @@
       <p>Loading...</p>
     </div>
 
-    <div id="toggle-rt" class="block hidden off">
-      <p>Ray Tracing <strong>OFF</strong></p>
+    <div id="options" class="hidden">
+      <button type="button" id="toggle-rt" class="block">
+        <p>Ray Tracing</p>
+        <strong>OFF</strong>
+      </button>
+      <button type="button" id="toggle-env" class="block">
+        <p>Environment</p>
+        <strong>Room</strong>
+      </button>
     </div>
 
     <div id="modal" class="block hidden">
@@ -57,42 +53,29 @@
       <p><strong>Warning</strong>: Performance may be an issue. Wait untill it is activated.</p>
     </div>
 
-    <div id="sample-count" class="block hidden">
-      <p>Samples: 0</p>
-    </div>
-
     <div id="back" class="hidden block">
       <img src="/arrow-back.svg" alt="info" />
     </div>
 
     <script>
-      const env = document.getElementById('env');
-      const env_select = document.getElementById('env-select');
+      // --> ENVIRONMENT TOGGLE
+      let env = 2;
+      let num_envs = 3;
+      let env_names = ['Full Gray', 'Sky', 'Room'];
+      let event_names = ['set-env-0', 'set-env-1', 'set-env-2'];
 
-      env_select.addEventListener('change', (event) => {
-        const selectedEnv = event.target.value;
-        if (selectedEnv === 'env-1') {
-          dispatchEvent(new CustomEvent('set-env-1'));
-        } else if (selectedEnv === 'env-2') {
-          dispatchEvent(new CustomEvent('set-env-2'));
-        } else if (selectedEnv === 'env-0') {
-          dispatchEvent(new CustomEvent('set-env-0'));
-        }
+      const toggle_env = document.getElementById('toggle-env');
+
+      toggle_env.addEventListener('click', () => {
+        env = (env + 1) % num_envs;
+        toggle_env.querySelector('strong').innerText = env_names[env];
+        dispatchEvent(new CustomEvent(event_names[env]));
       });
+      // --> ENVIRONMENT TOGGLE
 
+      // --> RAY TRACING TOGGLE
       const toggle_rt = document.getElementById('toggle-rt');
-      const rt_indicator = toggle_rt.querySelector('p strong');
       const back_button = document.getElementById('back');
-      const sample_count = document.getElementById('sample-count');
-
-      back_button.addEventListener('click', () => {
-        toggle_rt.classList.add('hidden');
-        back_button.classList.add('hidden');
-        sample_count.classList.add('hidden');
-        env.classList.add('hidden');
-        env_select.value = 'env-2';
-        dispatchEvent(new CustomEvent('quit-detailed-view'));
-      });
 
       toggle_rt.addEventListener('mouseover', () => {
         document.getElementById('modal').classList.remove('hidden');
@@ -107,38 +90,51 @@
         toggle_rt.classList.toggle('on');
         const isOn = toggle_rt.classList.contains('on');
         if (isOn) {
-          rt_indicator.innerText = 'ON';
-          sample_count.classList.remove('hidden');
+          toggle_rt.querySelector('strong').innerText = 'ON';
           back_button.classList.add('hidden');
-          env.classList.add('hidden');
+          toggle_env.classList.add('hidden');
           dispatchEvent(new CustomEvent('start-rt'));
         } else {
-          rt_indicator.innerText = 'OFF';
-          sample_count.classList.add('hidden');
+          toggle_rt.querySelector('strong').innerText = 'OFF';
           back_button.classList.remove('hidden');
-          env.classList.remove('hidden');
+          toggle_env.classList.remove('hidden');
           dispatchEvent(new CustomEvent('stop-rt'));
         }
       });
+      // --> RAY TRACING TOGGLE
 
+      // --> BACK BUTTON
+      back_button.addEventListener('click', () => {
+        toggle_rt.classList.add('hidden');
+        back_button.classList.add('hidden');
+        document.querySelector('#options').classList.add('hidden');
+        env_select.value = 'env-2';
+        dispatchEvent(new CustomEvent('quit-detailed-view'));
+      });
+      // --> BACK BUTTON
+
+      // --> INFO BUTTON
       const info_button = document.getElementById('show-info');
       const info = document.getElementById('info');
 
       info_button.addEventListener('click', () => {
         info.classList.toggle('hidden');
       });
+      // --> INFO BUTTON
 
+      // --> SELECTED BONES BUTTON
       const selected_button = document.getElementById('selected-bones');
 
       selected_button.addEventListener('click', () => {
-        const selected = document.querySelector('#selected-bones');
-        selected.classList.add('hidden');
+        selected_button.classList.add('hidden');
         toggle_rt.classList.remove('hidden');
         back_button.classList.remove('hidden');
-        env.classList.remove('hidden');
+        document.querySelector('#options').classList.remove('hidden');
         dispatchEvent(new CustomEvent('detailed-view'));
       });
+      // --> SELECTED BONES BUTTON
 
+      // --> LISTENERS
       addEventListener('loaded', () => {
         const loader = document.getElementById('loading');
         loader.classList.add('hidden');
@@ -157,11 +153,7 @@
         const title = document.querySelector('#selected-bones h2');
         title.innerText = '';
       });
-
-      addEventListener('samples', (event) => {
-        const selected = document.querySelector('#sample-count');
-        selected.innerText = `Samples: ${event.detail.samples}`;
-      });
+      // --> LISTENERS
     </script>
   </body>
 </html>
